@@ -1,0 +1,19 @@
+---
+- name: Install Apache and add port 80 to firewalld
+  hosts: webservers
+  become: yes
+  tasks:
+  - name: Apache is installed.
+    yum: name=httpd state=present
+  - name: Apache is running
+    service: name=httpd state=started enabled=yes
+  - name: Firewalld is started.
+    yum: name=firewalld enabled=yes state=present
+  - name: open up port 80 for tcp
+    firewalld: port=80/tcp permanent=yes state=enabled
+    notify: restart firewalls
+  
+  handlers:
+    - name: restart firewalld
+      service: name=firewalld =state=restarted
+      
