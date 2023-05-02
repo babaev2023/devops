@@ -1,0 +1,24 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "centos/7"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "4096"
+  end
+  config.vm.provision "shell", inline: <<-SHELL
+    setenforce 0
+    yum intall -y wget
+    wget -O /etc/yu,.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+    yum upgrade
+    yum install -y jenkins java-1.8.0-openjdk-devel
+    sudo systemctl start jenkins
+    firewall-cmd --permanent --zone=public --add-port=8080/tcp
+    firewall-cmd --reload
+    useradd admin
+    usermod -aG whell admin
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+    systemctl restart sshd.service
+   SHELL
+
+     config.vm.provision 'shell', inline: 'echo "vagrant:a" | chpasswd'
+end

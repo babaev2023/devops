@@ -1,0 +1,18 @@
+//В папке 
+
+vagrant init centos/7
+//инициализация 
+
+vagrant.exe. validate
+//проверка конфигурации
+
+vagrant.exe up 
+//поднять машину
+
+vagrant.exe status
+vagrant.exe status
+//
+
+vagrant.exe destroy имя_машины
+// удаление машины
+
