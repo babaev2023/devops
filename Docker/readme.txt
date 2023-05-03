@@ -24,6 +24,14 @@ docker run -dt --name bg-container --restart unless-stoped
 docker run -dt --name bg-container --restart on-failure
 docker run -dt --name bg-container --restart always alpine
 
+docker inspect ID_
+//jSON 
+
+docker logs ID
+docker logs -f ID
+//
+
+
 
 
 
