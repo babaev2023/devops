@@ -1,0 +1,113 @@
+---
+- name: Installing docker on Fedora
+  block:
+    - name: Add Docker repo
+      shell: dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+
+    - name: Install python setup tools
+      dnf: name=python3-setuptools state=present update_cache=yes
+
+    - name: Install Docker-ce
+      dnf: name="{{ item }}" update_cache=yes
+      loop:
+        - "docker-ce-{{ docker.fedora_version }}"
+        # - "docker-ce-cli-{{ docker.fedora_version }}"
+
+    # - name: Creating hold for docker-ce packages
+    #   dpkg_selections: name="{{ item }}" selection=hold
+    #   loop:
+    #     - docker-ce
+    #     - docker-ce-cli
+  when: ansible_distribution == "Fedora"
+
+- name: Installing docker on Ubuntu
+  block:
+    - name: Add Docker repo apt key
+      apt_key: url=https://download.docker.com/linux/ubuntu/gpg state=present
+
+    - name: Add Docker repo
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
+        state: present
+        filename: docker-ce
+        update_cache: yes
+
+    - name: Install python setup tools
+      apt: name=python3-setuptools state=present update_cache=yes
+
+    # Раскомментить для апгрейда докера
+    #- name: Unholding docker packages
+    #  shell: apt-mark unhold docker-ce*
+
+    - name: Install Docker-ce
+      apt: name="{{ item }}" update_cache=yes
+      loop:
+        - "docker-ce={{ docker.ubuntu_version }}"
+       # - "docker-ce-cli={{ docker.ubuntu_version }}"
+
+    - name: Creating hold for docker-ce packages
+      dpkg_selections: name="{{ item }}" selection=hold
+      loop:
+        - docker-ce
+        - docker-ce-cli
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install docker and docker-compose pip modules for ansible
+  pip: name="{{ item }}" state=latest executable=pip3
+  loop:
+    - docker
+    - docker-compose
+
+- name: Creating directories for docker and registry auth settings
+  file: path="{{ item.path }}" state=directory owner=root group=root mode="{{ item.mode }}"
+  loop:
+    - { path: "/etc/docker", mode: "0755" }
+    - { path: "/root/.docker", mode: "0700" }
+
+- name: Copy docker and registry auth settings
+  template: src=daemon.json.j2 dest=/etc/docker/daemon.json owner=root group=root mode=0644
+  notify: restart docker
+
+- name: Install docker-compose bash completion
+  get_url:
+    url: "https://raw.githubusercontent.com/docker/compose/{{ docker.docker_compose_version }}/contrib/completion/bash/docker-compose"
+    dest: /etc/bash_completion.d/docker-compose
+    force: yes
+    use_proxy: yes
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Add cron job to remove docker exited containers
+  cron:
+    name: Removing exited docker containers
+    user: root
+    hour: "*/1"
+    minute: "1"
+    job: "docker rm -v $(docker ps -a -q -f status=exited)"
+    cron_file: docker_rm
+    state: present
+
+- name: Add cron job to remove docker created containers
+  cron:
+    name: Removing created docker containers
+    user: root
+    hour: "*/1"
+    minute: "15"
+    job: "docker rm -v $(docker ps -a -q -f status=created)"
+    cron_file: docker_rm
+    state: present
+
+- name: Add cron job to remove docker dangling images
+  cron:
+    name: Removing dangling docker images
+    user: root
+    hour: "6"
+    minute: "30"
+    day: "*/7"
+    job: "{% raw %} docker images --format='{{.Repository}}:{{.Tag}}' | grep -v latest | grep -v '<none>' | xargs -L 1 docker rmi{% endraw %}"
+    cron_file: docker_rm
+    state: present
+
+- name: Creating /data/docker directory
+  file: path=/data/docker state=directory owner=root group=root mode=0755

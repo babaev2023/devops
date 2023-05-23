@@ -1,0 +1,77 @@
+---
+- name: Install and configure GitLab
+  block:
+    - name: Creating backend docker network
+      docker_network:
+        name: backend
+        ipam_config:
+          - subnet: 100.95.10.1/24
+            gateway: 100.95.10.1
+        state: present
+
+    - name: Creating GitLab volumes folders
+      file: dest="{{ item }}" state=directory owner=root group=root mode=0755
+      loop:
+        - "{{ gitlab.volumes.repo_path }}"
+        - "{{ gitlab.volumes.logs_path }}"
+        - "{{ gitlab.volumes.config_path }}"
+
+    - name: Run GitLab container
+      docker_container:
+        name:  "{{ gitlab.name }}"
+        image: "{{ gitlab.image }}"
+        hostname: "{{ gitlab.hostname }}"
+        pull: true
+        state: started
+        restart_policy: always
+        networks:
+          - name: backend
+        networks_cli_compatible: yes
+        ports:
+          - 80:80
+          - 443:443
+          - 5005:5005
+        volumes:
+          - "{{ gitlab.volumes.repo_path }}:/var/opt/gitlab"
+          - "{{ gitlab.volumes.logs_path }}:/var/log/gitlab"
+          - "{{ gitlab.volumes.config_path }}:/etc/gitlab"
+        ulimits: nofile:128000:128000
+
+    - name: Copy GitLab config
+      template: src=gitlab.rb.j2 dest="{{ gitlab.volumes.config_path }}/gitlab.rb"
+      notify: restart gitlab
+
+    - name: Apply handlers
+      meta: flush_handlers
+  tags: gitlab
+
+- name: Install and configure GitLab-Runner
+  block:
+    - name: Checking if GitLab-runner config folder exists
+      stat: path="{{ gitlab_runner.volumes.config_path }}"
+      register: gitlab_runner_conf_folder
+
+    - name: Creating GitLab-runner config folders
+      file: dest="{{ gitlab_runner.volumes.config_path }}" state=directory owner=root group=root mode=0755
+      when: gitlab_runner_conf_folder.stat.exists == False
+
+    - name: Copy GitLab-runner config
+      template: src=gitlab-runner.toml.j2 dest="{{ gitlab_runner.volumes.config_path }}/config.toml" owner=root group=root mode=0600
+      notify: restart gitlab-runner
+
+    - name: Run GitLab-runner container
+      docker_container:
+        name:  "{{ gitlab_runner.name }}"
+        image: "{{ gitlab_runner.image }}"
+        hostname: "{{ gitlab_runner.hostname }}"
+        pull: true
+        state: started
+        restart_policy: always
+        networks:
+          - name: backend
+        networks_cli_compatible: yes
+        volumes:
+          - "{{ gitlab_runner.volumes.config_path }}:/etc/gitlab-runner"
+          - /var/run/docker.sock:/var/run/docker.sock
+        ulimits: nofile:128000:128000
+  tags: gitlab-runner

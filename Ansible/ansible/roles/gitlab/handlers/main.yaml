@@ -1,0 +1,6 @@
+---
+- name: restart gitlab
+  shell: "docker restart {{ gitlab.name }}"
+
+- name: restart gitlab-runner
+  shell: "docker restart {{ gitlab_runner.name }}"
