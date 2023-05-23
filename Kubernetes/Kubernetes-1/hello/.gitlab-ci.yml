@@ -1,0 +1,53 @@
+---
+# stages:
+#   - build
+#   - test
+#   - push
+
+# variables:
+#   REGISTRY_IP: 192.168.1.106
+
+# build:
+#   stage: build
+#   before_script:
+#     - buildah login --tls-verify=false -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#   script:
+#     - buildah build -t "$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/hello-go:latest" .
+
+# run:
+#   stage: test
+#   script:
+#     - buildah run --name=testing-go -p 8080:8080 -d "$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/hello-go:latest"
+
+# test:
+#   stage: test
+#   script:
+#     - curl http://$REGISTRY_IP:8080
+
+# push:
+#   stage: push
+#   before_script:
+#     - buildah login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#   script:
+#     - buildah push "$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/hello-go:latest"
+
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  before_script:
+    - buildah login --tls-verify=false -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - buildah build -t "$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/hello-go:1.0" .
+    - buildah push --tls-verify=false "$CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/hello-go:1.0"
+
+deploy:
+  stage: deploy
+  image: dtzar/helm-kubectl:3.12.0
+  before_script:
+    - mkdir ~/.kube
+    - cp $KUBE_CONFIG ~/.kube/config
+  script:
+    - cd helm && helm upgrade -i --create-namespace -n myapp myapp .

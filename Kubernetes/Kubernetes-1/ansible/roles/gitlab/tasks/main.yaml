@@ -1,0 +1,40 @@
+---
+- name: Creating backend docker network
+  docker_network:
+    name: backend
+    ipam_config:
+      - subnet: 100.95.10.1/24
+        gateway: 100.95.10.1
+    state: present
+
+- name: Creating GitLab volumes folders
+  file: dest="{{ item }}" state=directory owner=root group=root mode=0755
+  loop:
+    - "{{ gitlab.volumes.repo_path }}"
+    - "{{ gitlab.volumes.logs_path }}"
+    - "{{ gitlab.volumes.config_path }}"
+
+- name: Run GitLab container
+  docker_container:
+    name:  "{{ gitlab.name }}"
+    image: "{{ gitlab.image }}"
+    hostname: "{{ gitlab.hostname }}"
+    pull: true
+    state: started
+    restart_policy: always
+    networks:
+      - name: backend
+    networks_cli_compatible: yes
+    ports:
+      - 80:80
+      - 443:443
+      - 5005:5005
+    volumes:
+      - "{{ gitlab.volumes.repo_path }}:/var/opt/gitlab"
+      - "{{ gitlab.volumes.logs_path }}:/var/log/gitlab"
+      - "{{ gitlab.volumes.config_path }}:/etc/gitlab"
+    ulimits: nofile:128000:128000
+
+- name: Copy GitLab config
+  template: src=gitlab.rb.j2 dest="{{ gitlab.volumes.config_path }}/gitlab.rb"
+  notify: restart gitlab

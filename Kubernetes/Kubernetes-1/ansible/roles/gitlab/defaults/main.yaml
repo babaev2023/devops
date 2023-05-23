@@ -1,0 +1,12 @@
+---
+gitlab:
+  name: gitlab
+  image: gitlab/gitlab-ee:15.2.2-ee.0
+  hostname: gitlab.local
+  volumes:
+    repo_path: /data/docker/gitlab/data
+    logs_path: /data/docker/gitlab/log
+    config_path: /data/docker/gitlab/config
+  root_pass: 12345678
+  shared_runners_token: sdKef943KdglaV2M
+  gitlab_url: http://10.5.1.130/

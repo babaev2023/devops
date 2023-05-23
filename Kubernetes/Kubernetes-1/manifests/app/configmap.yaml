@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-configmap
+  labels:
+    app: nginx
+data:
+  # Configuration Values are stored as key-value pairs
+  system.data.type_one: "app-type-xxx"
+  system.data.value: "3"
+  # File like Keys
+  mysrv.conf: |
+    ui.type=2
+    ui.color1=red
+    ui.color2=green
+    test string

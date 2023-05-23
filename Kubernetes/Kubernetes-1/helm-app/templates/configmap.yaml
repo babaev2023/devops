@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-configmap
+  labels:
+    app: {{ .Chart.Name }}
+    version: {{ .Chart.AppVersion }}
+    {{ toYaml .Values.labels }}
+data:
+  type_one.conf: {{ tpl (toYaml .Values.configs.type_one) $ | indent 2 }}
+  mysrv.conf: {{ tpl (toYaml .Values.configs.mysrv) $ | indent 2 }}

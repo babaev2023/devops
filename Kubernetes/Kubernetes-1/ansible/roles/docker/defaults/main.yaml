@@ -1,0 +1,5 @@
+---
+docker:
+  ubuntu_version: "5:20.10.14*"
+  fedora_version: "3:20.10.14*"
+  docker_compose_version: 1.28.2

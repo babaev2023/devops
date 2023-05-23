@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-deployment
+  labels:
+    app: {{ .Chart.Name }}
+    version: {{ .Chart.AppVersion }}
+    {{ toYaml .Values.labels }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }} #1
+  template: # = POD
+    metadata:
+      labels:
+        app: {{ .Chart.Name }} #1
+        version: {{ .Chart.AppVersion }}
+    spec:
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.name }}:{{ .Values.image.tag }}
+          ports:
+            {{- range .Values.ports }}
+            - containerPort: {{ . }}
+            {{- end }}
+          volumeMounts:
+            - name: conf
+              mountPath: "/tmp/cm/"
+              readOnly: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: conf
+          configMap:
+            name: {{ .Chart.Name }}-configmap

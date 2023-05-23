@@ -1,0 +1,59 @@
+---
+labels:
+  env: test
+
+replicas: 2
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - kube5
+                - kube4
+
+# tolerations:
+#   - key: nginx
+#     operator: Equal
+#     value: "yes"
+#     effect: NoExecute
+
+image:
+  name: nginx
+  tag: 1.24
+
+ports:
+  - 80
+
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "100m"
+  limits:
+    memory: "128Mi"
+    cpu: "200m"
+
+service:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 80
+      nodePort: 31800
+
+configs:
+  type_one: app-type-xxx
+  mysrv: |
+    ui.type=2
+    ui.color1=red
+    ui.color2=green
+    test string
+
+ingress:
+  - host: hello-world-1.info
+    path: "/"
+    srv_name: "{{ .Chart.Name }}-srv"
+    srv_port: 8080
