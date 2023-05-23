@@ -1,0 +1,38 @@
+version: '2.4'
+
+services:
+  hello-go1:
+    container_name: hello-go
+    env_file:
+      - env/.env
+    build:
+      context: ./build/app
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+    networks:
+      - backend-network
+    restart: always
+
+  hello-nginx:
+    container_name: hello-nginx
+    build:
+      context: ./build/nginx
+    image: mynginx:1.0
+    ports:
+      - 80:80
+    volumes:
+      - /tmp/nginx/logs:/var/log/nginx
+    depends_on:
+      - hello-go1
+    networks:
+      - backend-network
+    restart: always
+    ulimits:
+      nofile:
+        soft: 12800
+        hard: 128000
+
+networks:
+  backend-network:
+    external: true
