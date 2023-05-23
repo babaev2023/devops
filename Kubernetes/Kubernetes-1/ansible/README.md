@@ -7,4 +7,4 @@ sudo apt install sshpass
 ansible-galaxy collection install community.general
 
 ### Подключение шары через smb в linux
-mount -t cifs //10.5.50.231/student/Devops\ практика target_folder
+mount -t cifs //шара/Devops\ практика target_folder
