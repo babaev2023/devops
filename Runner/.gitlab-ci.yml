@@ -1,0 +1,13 @@
+---
+
+stages:
+  - test
+
+My first job:
+  stage: test
+  script:
+    - ls -la
+    - pwd
+    - echo "Hello world!"
+    - sleep 5
+    - echo "Yes, it works!"
