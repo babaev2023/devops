@@ -1,0 +1,21 @@
+---
+
+image: python:3.10.4
+
+stages:
+  - build
+  - lint
+
+Build and Test:
+  stage: build
+  script:
+    - pip install -r requirements.txt
+    - ls -la
+    - python Hello.py
+    - echo "The code is okay"
+
+lint:
+  stage: lint
+  script:
+    - pip install -r requirements.txt
+    - flake8 . --extend-exclude=dist,build --show-source --statistics

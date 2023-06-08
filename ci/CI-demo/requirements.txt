@@ -1,0 +1,6 @@
+ntplib==0.4.0
+flake8==4.0.1
+## The following requirements were added by pip freeze:
+mccabe==0.6.1
+pycodestyle==2.8.0
+pyflakes==2.4.0
