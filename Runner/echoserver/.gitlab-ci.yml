@@ -1,0 +1,24 @@
+stages:
+- build
+- publish
+- deploy
+
+Build binary:
+  stage: build
+  image: golang:1.14
+  script:
+  - CGO_ENABLED=0 go build ./
+  - cp echoserver /artifacts/echoserver
+
+Build docker image:
+  stage: publish
+  image: docker:19.03.12
+  script:
+  - cp /artifacts/echoserver .
+  - docker build -t echoserver:v0.0.1 .
+
+Run docker image:
+  stage: deploy
+  image: docker:19.03.12
+  script:
+  - docker run -d -p 58080:58080 echoserver:v0.0.1
