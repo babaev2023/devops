@@ -1,6 +1,3 @@
-## Deploy DJANGO  
-
-
 Создание пользователя
 ---------------------
 adduser username
